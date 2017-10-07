@@ -7,6 +7,12 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from pprint import pprint
 
 # =====================================================
+#                      Константы
+
+global round_time
+round_time = 5*60
+
+# =====================================================
 #                      КЛАСС ИГРЫ
 # (характеризует текущее состояние игры и все возможные
 #  переходы и методы..................................)
@@ -19,7 +25,7 @@ class game(object):
         self.__players__ = {}
         self.__host__ = 0
         self.__ppz__ = []
-        self.__timer__ = 0
+        self.__timer__ = round_time
         self.__raund__ = 0
         self.__votes__ = {}
     def add_player(self, adr, name, chat_id, message_id):
@@ -36,8 +42,11 @@ class game(object):
             chat_id = self.__players__[player][1]
             message_id = self.__players__[player][2]
             if player in self.__ppz__:
-                bot.editMessageText((chat_id, message_id), text,
+                try:
+                    bot.editMessageText((chat_id, message_id), text,
                                 reply_markup=keyboard)
+                except:
+                    print("UPDATE FAILED")
 
     def say2citizen(self, text, keyboard):
         for player in self.__players__:
@@ -45,12 +54,15 @@ class game(object):
             chat_id = self.__players__[player][1]
             message_id = self.__players__[player][2]
             if player not in self.__ppz__:
-                bot.editMessageText((chat_id, message_id), text,
+                try:
+                    bot.editMessageText((chat_id, message_id), text,
                                 reply_markup=keyboard)
+                except:
+                    print("UPDATE FAILED")
 
     def end_round(self):
         self.__raund__ += 1
-        self.__timer__ = 0
+        self.__timer__ = round_time
 
         for player in self.__players__:
             self.__votes__[player] = None
@@ -69,8 +81,15 @@ class game(object):
 
     def process(self):
         if self.__started__ == 1:
-            self.__timer__ += 1
-            if self.__timer__ > 10:
+            self.__timer__ -= 1
+            if self.__timer__ == 240:
+                self.say2all()
+            if self.__timer__ == 180:
+                self.say2all()
+            if self.__timer__ == 180:
+                self.say2all()
+
+            if self.__timer__ < 0:
                 self.end_round()
             if self.__raund__ > 10:
                 self.end_game()
@@ -109,7 +128,11 @@ def keyboard_handler(query_id, adr, name, msg, chat_id, message_id):
         in_lobby[host] = (name, chat_id, message_id)
         hosts[host] = name
 
-        bot.editMessageText((chat_id, message_id), 'Поздравляю! Вы создали игру! Теперь вы можете проверить подключенных игроков и начать!', reply_markup=host_keyboard())
+        try:
+            bot.editMessageText((chat_id, message_id), 'Поздравляю! Вы создали игру! Теперь вы можете проверить подключенных игроков и начать!', reply_markup=host_keyboard())
+        except:
+            print("UPDATE FAILED")
+
         for player in in_lobby: # обновляем лобби
             if player not in hosts:
                 first_menu(player)
@@ -202,9 +225,10 @@ def first_menu(player):
         text = 'Подключитесь к созданной игре, или создайте сами'
     else:
         text = 'Вы присоединились к игре ' + in_lobby[player][0]
-    bot.editMessageText((in_lobby[player][1], in_lobby[player][2]), text,
-                        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
-
+    try:
+        bot.editMessageText((in_lobby[player][1], in_lobby[player][2]), text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    except:
+        print("UPDATE FAILED")
 def host_keyboard():
     buttons = list()
     buttons.append([InlineKeyboardButton(text='ИГРОКИ В ЛОББИ', callback_data='check_players')])
@@ -236,9 +260,11 @@ def main_window(game_id, player_id):
         text = 'Вы ППЦ! Кодовое слово ПЕРЕЦ! Для победы укажите второго ППЦ!'
     else:
         text = 'Вы гражданин! Найдите одного из ППЦ!'
-    bot.editMessageText((games[game_id].__players__[player_id][1], games[game_id].__players__[player_id][2]), text,
+    try:
+        bot.editMessageText((games[game_id].__players__[player_id][1], games[game_id].__players__[player_id][2]), text,
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
-
+    except:
+        print("UPDATE FAILED")
 # =====================================================
 #                 ИНИЦИАЛИЗАЦИЯ БОТА
 # =====================================================
