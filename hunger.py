@@ -16,7 +16,7 @@ round_time = 5*60
 #                      КЛАСС ИГРЫ
 # (характеризует текущее состояние игры и все возможные
 #  переходы и методы..................................)
-# =====================================================
+# ====================================================
 
 class game(object):
     def __init__(self):
@@ -28,13 +28,31 @@ class game(object):
         self.__timer__ = round_time
         self.__raund__ = 0
         self.__votes__ = {}
+
     def add_player(self, adr, name, chat_id, message_id):
         self.__players__[adr] = (name, chat_id, message_id)
+
+    def show_time(self):
+        mins = int(self.__timer__/60)
+        sec = self.__timer__ - mins*60
+        if (mins == 0) and (sec <=30):
+            if sec <= 10:
+                return '0:10'
+            elif sec <= 20:
+                return '0:20'
+            else:
+                return '0:30'
+        else:
+            if sec >= 30:
+                s = '30'
+            else:
+                s = '00'
+        show = str(mins) + ':' + s
+        return show
 
     def say2all(self):
         for player in self.__players__:
             main_window(hosts[self.__host__], player)
-
 
     def say2ppz(self, text, keyboard):
         for player in self.__players__:
@@ -82,6 +100,7 @@ class game(object):
     def process(self):
         if self.__started__ == 1:
             self.__timer__ -= 1
+
             if self.__timer__ == 240:
                 self.say2all()
             if self.__timer__ == 180:
