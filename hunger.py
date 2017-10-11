@@ -28,6 +28,7 @@ class game(object):
         self.__timer__ = round_time
         self.__raund__ = 0
         self.__votes__ = {}
+        self.__show_time__ = ''
 
     def add_player(self, adr, name, chat_id, message_id):
         self.__players__[adr] = (name, chat_id, message_id)
@@ -48,11 +49,11 @@ class game(object):
             else:
                 s = '00'
         show = str(mins) + ':' + s
-        return show
+        self.__show_time__ = show
 
-    def say2all(self):
+    def say2all(self, text):
         for player in self.__players__:
-            main_window(hosts[self.__host__], player)
+            main_window(hosts[self.__host__], player, text)
 
     def say2ppz(self, text, keyboard):
         for player in self.__players__:
@@ -103,14 +104,19 @@ class game(object):
         # Показываем таймер
         # ------------------------------------
             if self.__timer__ == round_time/2:
+                self.show_time()
                 self.say2all()
             if self.__timer__ == round_time/4:
+                self.show_time()
                 self.say2all()
             if self.__timer__ == 60:
+                self.show_time()
                 self.say2all()
             if self.__timer__ == 30:
+                self.show_time()
                 self.say2all()
             if self.__timer__ == 10:
+                self.show_time()
                 self.say2all()
         # -----------------------------------
         # ограничение по времени
@@ -276,10 +282,11 @@ def welcome_keybord():
     buttons.append([InlineKeyboardButton(text='ВОЙТИ', callback_data='enter')])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def main_window(game_id, player_id):
+def main_window(game_id, player_id, text, time=None):
+
     buttons = list()
     buttons.append([InlineKeyboardButton(text='РАУНД', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=str(games[game_id].__raund__), callback_data='ignore') ])
-    buttons.append([InlineKeyboardButton(text='ВРЕМЯ:', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=games[game_id].show_time(), callback_data='ignore')])
+    buttons.append([InlineKeyboardButton(text='ВРЕМЯ:', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=games[game_id].__show_time__, callback_data='ignore')])
     buttons.append([InlineKeyboardButton(text='ГОЛОСОВАТЬ:', callback_data='ignore')])
     for player in games[game_id].__players__:
         if player != player_id:
@@ -291,10 +298,6 @@ def main_window(game_id, player_id):
         his_name = games[game_id].__players__[point2][0]
         buttons.append([InlineKeyboardButton(text=his_name, callback_data='ignore')])
 
-    if player_id in games[game_id].__ppz__:
-        text = 'Вы ППЦ! Кодовое слово ПЕРЕЦ! Для победы укажите второго ППЦ!'
-    else:
-        text = 'Вы гражданин! Найдите одного из ППЦ!'
     try:
         bot.editMessageText((games[game_id].__players__[player_id][1], games[game_id].__players__[player_id][2]), text,
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
