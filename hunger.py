@@ -100,18 +100,33 @@ class game(object):
     def process(self):
         if self.__started__ == 1:
             self.__timer__ -= 1
-
-            if self.__timer__ == 240:
+        # Показываем таймер
+        # ------------------------------------
+            if self.__timer__ == round_time/2:
                 self.say2all()
-            if self.__timer__ == 180:
+            if self.__timer__ == round_time/4:
                 self.say2all()
-            if self.__timer__ == 180:
+            if self.__timer__ == 60:
                 self.say2all()
-
+            if self.__timer__ == 30:
+                self.say2all()
+            if self.__timer__ == 10:
+                self.say2all()
+        # -----------------------------------
+        # ограничение по времени
             if self.__timer__ < 0:
                 self.end_round()
             if self.__raund__ > 10:
                 self.end_game()
+        # чек на окончание игры
+            ppz1_vote = self.__votes__[self.__ppz__[0]]
+            ppz2_vote = self.__votes__[self.__ppz__[1]]
+            if ppz1_vote == self.__ppz__[1]:
+                if ppz2_vote == self.__ppz__[0]:
+                    self.end_game()
+
+
+
     def __str__(self):
         pprint(self.__players__)
         return("open: " + str(self.__open__) + "\nstarted: " + str(self.__started__) + "\nhost: " + str(self.__host__))
@@ -248,6 +263,7 @@ def first_menu(player):
         bot.editMessageText((in_lobby[player][1], in_lobby[player][2]), text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     except:
         print("UPDATE FAILED")
+
 def host_keyboard():
     buttons = list()
     buttons.append([InlineKeyboardButton(text='ИГРОКИ В ЛОББИ', callback_data='check_players')])
@@ -263,7 +279,7 @@ def welcome_keybord():
 def main_window(game_id, player_id):
     buttons = list()
     buttons.append([InlineKeyboardButton(text='РАУНД', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=str(games[game_id].__raund__), callback_data='ignore') ])
-    buttons.append([InlineKeyboardButton(text='ВРЕМЯ:', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=str(games[game_id].__timer__), callback_data='ignore')])
+    buttons.append([InlineKeyboardButton(text='ВРЕМЯ:', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=games[game_id].show_time(), callback_data='ignore')])
     buttons.append([InlineKeyboardButton(text='ГОЛОСОВАТЬ:', callback_data='ignore')])
     for player in games[game_id].__players__:
         if player != player_id:
@@ -284,6 +300,7 @@ def main_window(game_id, player_id):
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     except:
         print("UPDATE FAILED")
+
 # =====================================================
 #                 ИНИЦИАЛИЗАЦИЯ БОТА
 # =====================================================
