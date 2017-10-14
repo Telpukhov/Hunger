@@ -10,7 +10,7 @@ from pprint import pprint
 #                      Константы
 
 global round_time
-round_time = 5*60
+round_time = 321
 
 # =====================================================
 #                      КЛАСС ИГРЫ
@@ -28,7 +28,14 @@ class game(object):
         self.__timer__ = round_time
         self.__raund__ = 0
         self.__votes__ = {}
-        self.__show_time__ = ''
+        self.__ppz_cur_text__ = ""
+        self.__citizen_cur_text = ""
+        self.__words__ = ['Подъезд', 'Прекрасных', 'Целеуказаний']
+        mins = int(round_time/60)
+        sec = round_time - mins*60
+        sec_d = int(sec/10)
+        sec_e = sec - sec_d*10
+        self.__show_time__ = str(mins) + ":" + str(sec_d) + str(sec_e)
 
     def add_player(self, adr, name, chat_id, message_id):
         self.__players__[adr] = (name, chat_id, message_id)
@@ -36,48 +43,24 @@ class game(object):
     def show_time(self):
         mins = int(self.__timer__/60)
         sec = self.__timer__ - mins*60
-        if (mins == 0) and (sec <=30):
-            if sec <= 10:
-                return '0:10'
-            elif sec <= 20:
-                return '0:20'
-            else:
-                return '0:30'
-        else:
-            if sec >= 30:
-                s = '30'
-            else:
-                s = '00'
-        show = str(mins) + ':' + s
+        sec_d = int(sec/10)
+        sec_e = sec - sec_d*10
+        show = str(mins) + ":" + str(sec_d) + str(sec_e)
         self.__show_time__ = show
 
     def say2all(self, text):
         for player in self.__players__:
             main_window(hosts[self.__host__], player, text)
 
-    def say2ppz(self, text, keyboard):
+    def say2ppz(self, text):
         for player in self.__players__:
-            name = self.__players__[player][0]
-            chat_id = self.__players__[player][1]
-            message_id = self.__players__[player][2]
             if player in self.__ppz__:
-                try:
-                    bot.editMessageText((chat_id, message_id), text,
-                                reply_markup=keyboard)
-                except:
-                    print("UPDATE FAILED")
+                main_window(hosts[self.__host__], player, text)
 
-    def say2citizen(self, text, keyboard):
+    def say2citizen(self, text):
         for player in self.__players__:
-            name = self.__players__[player][0]
-            chat_id = self.__players__[player][1]
-            message_id = self.__players__[player][2]
             if player not in self.__ppz__:
-                try:
-                    bot.editMessageText((chat_id, message_id), text,
-                                reply_markup=keyboard)
-                except:
-                    print("UPDATE FAILED")
+                main_window(hosts[self.__host__], player, text)
 
     def end_round(self):
         self.__raund__ += 1
@@ -85,7 +68,7 @@ class game(object):
 
         for player in self.__players__:
             self.__votes__[player] = None
-        self.say2all()
+        self.say2all("Раунд №" + str(self.__raund__))
 
     def end_game(self):
         # перекидываем людей из игры в лобби
@@ -103,21 +86,8 @@ class game(object):
             self.__timer__ -= 1
         # Показываем таймер
         # ------------------------------------
-            if self.__timer__ == round_time/2:
-                self.show_time()
-                self.say2all()
-            if self.__timer__ == round_time/4:
-                self.show_time()
-                self.say2all()
-            if self.__timer__ == 60:
-                self.show_time()
-                self.say2all()
-            if self.__timer__ == 30:
-                self.show_time()
-                self.say2all()
-            if self.__timer__ == 10:
-                self.show_time()
-                self.say2all()
+            self.show_time()
+
         # -----------------------------------
         # ограничение по времени
             if self.__timer__ < 0:
@@ -237,7 +207,7 @@ def keyboard_handler(query_id, adr, name, msg, chat_id, message_id):
         for player in in_lobby:
             if player not in hosts:
                 first_menu(player)
-        games[name].say2all()
+        games[name].say2all("Начало игры")
 
 
     # =====================================================
@@ -248,7 +218,7 @@ def keyboard_handler(query_id, adr, name, msg, chat_id, message_id):
         vote = int(msg[5:])
         g = in_game[adr][0]
         games[g].__votes__[adr] = vote
-        games[g].say2all()
+        games[g].say2all("Вы проголосовали")
 
 # =====================================================
 #                      КЛАВИАТУРЫ
@@ -345,14 +315,14 @@ while 1:
             if 'message' in pkg: # пришло текстовое сообщение
                 adr = pkg['message']['from']['id']
                 msg = pkg['message']['text']
-                name = pkg['message']['from']['username']
+                name = pkg['message']['from']['first_name']
                 chat_id = pkg['message']['chat']['id']
                 message_id = pkg['message']['message_id']
                 msg_handler(adr, msg, name, chat_id, message_id)
             elif 'callback_query' in pkg: # пришла команда с кнопки
                 query_id = pkg['callback_query']['id']
                 chat_id = pkg['callback_query']['message']['chat']['id']
-                name = pkg['callback_query']['message']['chat']['username']
+                name = pkg['callback_query']['message']['chat']['first_name']
                 message_id = pkg['callback_query']['message']['message_id']
                 #bot.deleteMessage((chat_id, message_id))
                 adr = pkg['callback_query']['from']['id']
