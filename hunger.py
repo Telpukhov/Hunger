@@ -10,7 +10,7 @@ from pprint import pprint
 #                      Константы
 
 global round_time
-round_time = 321
+round_time = 50
 
 # =====================================================
 #                      КЛАСС ИГРЫ
@@ -29,7 +29,8 @@ class game(object):
         self.__raund__ = 0
         self.__votes__ = {}
         self.__ppz_cur_text__ = ""
-        self.__citizen_cur_text = ""
+        self.__citizen_cur_text__ = ""
+        self.__evil_win__ = 0
         self.__words__ = ['Подъезд', 'Прекрасных', 'Целеуказаний']
         mins = int(round_time/60)
         sec = round_time - mins*60
@@ -63,12 +64,37 @@ class game(object):
                 main_window(hosts[self.__host__], player, text)
 
     def end_round(self):
+        # Чек на победу зла!
+        if self.__evil_win__ == 1:
+            self.end_game_message()
+            return 0
+        #-------------------
+
         self.__raund__ += 1
         self.__timer__ = round_time
-
+        if self.__raund__ == 2:
+            self.__ppz_cur_text__ = "Вы шпион отряда ППЦ! Ваша миссия - вычислить вашего союзника и помочь ему вычислить " \
+                                       "Вас! Вам раскрыто второе слово для коммуникации: " + games[name].__words__[0] + " " + games[name].__words__[1]
+        if self.__raund__ == 3:
+            self.__ppz_cur_text__ = "Вы шпион отряда ППЦ! Ваша миссия - вычислить вашего союзника и помочь ему вычислить " \
+                                       "Вас! Вам раскрыты все слова для коммуникации: " + games[name].__words__[0] + " " + games[name].__words__[1] + " " + games[name].__words__[2]
         for player in self.__players__:
             self.__votes__[player] = None
-        self.say2all("Раунд №" + str(self.__raund__))
+        self.say2ppz(self.__ppz_cur_text__)
+        self.say2citizen(self.__citizen_cur_text__)
+
+    def end_game_message(self):
+        text = " "
+        if self.__evil_win__ == 0:
+            text = 'Добро победило! Шпионами были: '
+        if self.__evil_win__ == 1:
+            text = 'Победило ЗЛО! Шпионами были: '
+        for ppc in self.__ppz__:
+            text += ' '+str(games[hosts[self.__host__]].__players__[ppc][0])
+        for player in self.__players__:
+            final_window(self.__players__[player][1], self.__players__[player][2], text)
+        self.end_game()
+
 
     def end_game(self):
         # перекидываем людей из игры в лобби
@@ -77,9 +103,11 @@ class game(object):
             in_lobby[player] = (None, tmp[1], tmp[2])
         finished_games.append(hosts.pop(self.__host__))
         # обновляем лобби
-        for player in in_lobby:
-            if player not in hosts:
-                first_menu(player)
+        #for player in in_lobby:
+        #    if player not in hosts:
+        #        first_menu(player)
+
+
 
     def process(self):
         if self.__started__ == 1:
@@ -87,19 +115,57 @@ class game(object):
         # Показываем таймер
         # ------------------------------------
             self.show_time()
+            self.say2citizen(self.__citizen_cur_text__)
+            self.say2ppz(self.__ppz_cur_text__)
 
         # -----------------------------------
         # ограничение по времени
-            if self.__timer__ < 0:
+            if self.__timer__ < 1:
                 self.end_round()
             if self.__raund__ > 10:
                 self.end_game()
-        # чек на окончание игры
+                return 0
+        # чек на окончание игры (ЗЛОМ)
             ppz1_vote = self.__votes__[self.__ppz__[0]]
             ppz2_vote = self.__votes__[self.__ppz__[1]]
             if ppz1_vote == self.__ppz__[1]:
                 if ppz2_vote == self.__ppz__[0]:
-                    self.end_game()
+                    self.__ppz_cur_text__ = "Вы нашли друг друга! Осталось продержаться несколько секунд!"
+                    self.__citizen_cur_text__ = "Вы на грани провала! Шпионы опознали друг друга! У вас остался последний шанс разоблачить их!"
+                    self.__timer__ = 20
+                    self.__votes__[self.__ppz__[0]] = None
+                    self.__votes__[self.__ppz__[1]] = None
+                    self.__evil_win__ = 1
+        # чек на окончание игры (ДОБРОМ)
+            if len(self.__players__) > len(self.__ppz__):
+                good_votes = []
+                for player in self.__players__:
+                    if player not in self.__ppz__:
+                        good_votes.append(self.__votes__[player])
+                ppc1 = 0
+                ppc2 = 0
+                for vote in good_votes:
+                    if vote == self.__ppz__[0]:
+                        ppc1 += 1
+                    if vote == self.__ppz__[1]:
+                        ppc2 += 1
+                if ppc1 == len(self.__players__) - 2:
+                    self.__evil_win__ = 0
+                    self.end_game_message()
+                    return 0
+                if ppc2 == len(self.__players__) - 2:
+                    self.__evil_win__ = 0
+                    self.end_game_message()
+                    return 0
+
+        # чек на окончание раунда (все проголосовали)
+            endround = 1
+            for vote in self.__votes__:
+                if self.__votes__[vote] == None:
+                    endround = 0
+                    break
+            if endround == 1:
+                self.end_round()
 
 
 
@@ -203,12 +269,22 @@ def keyboard_handler(query_id, adr, name, msg, chat_id, message_id):
         games[name].__raund__ = 1
         for player in games[name].__players__:
             games[name].__votes__[player] = None
+        # первое послание ППЦ
+        games[name].__ppz_cur_text__ = "Вы шпион отряда ППЦ! Ваша миссия - вычислить вашего союзника и помочь ему вычислить " \
+                                       "Вас! Вам раскрыто первое слово для коммуникации: " + games[name].__words__[0]
+        # первое послание горожанам
+        games[name].__citizen_cur_text__ = "Вы горожанин. Среди вашего взвода есть два шпиона. Вам нужно единогласно вычислить их!"
+
+        # инициализация голосов
+        for player in games[name].__players__:
+            games[name].__votes__[player] = None
+
         # обновляем лобби
         for player in in_lobby:
             if player not in hosts:
                 first_menu(player)
-        games[name].say2all("Начало игры")
-
+        games[name].say2ppz(games[name].__ppz_cur_text__)
+        games[name].say2citizen(games[name].__citizen_cur_text__)
 
     # =====================================================
     #                 ОБРАБОТЧИК ИГРЫ
@@ -217,8 +293,15 @@ def keyboard_handler(query_id, adr, name, msg, chat_id, message_id):
     if 'vote_' in msg:
         vote = int(msg[5:])
         g = in_game[adr][0]
-        games[g].__votes__[adr] = vote
-        games[g].say2all("Вы проголосовали")
+        if (games[g].__evil_win__ == 1) and (adr in games[g].__ppz__):
+            None
+        else:
+            games[g].__votes__[adr] = vote
+        games[g].say2ppz(games[g].__ppz_cur_text__)
+        games[g].say2citizen(games[g].__citizen_cur_text__)
+    if msg == 'quit_game':
+        # обновляем лобби
+        first_menu(adr)
 
 # =====================================================
 #                      КЛАВИАТУРЫ
@@ -252,7 +335,7 @@ def welcome_keybord():
     buttons.append([InlineKeyboardButton(text='ВОЙТИ', callback_data='enter')])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def main_window(game_id, player_id, text, time=None):
+def main_window(game_id, player_id, text):
 
     buttons = list()
     buttons.append([InlineKeyboardButton(text='РАУНД', callback_data='ignore'), InlineKeyboardButton(text='  ', callback_data='ignore'), InlineKeyboardButton(text=str(games[game_id].__raund__), callback_data='ignore') ])
@@ -273,6 +356,18 @@ def main_window(game_id, player_id, text, time=None):
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     except:
         print("UPDATE FAILED")
+
+def final_window(game_id, player_id, text):
+    buttons = list()
+    buttons.append([InlineKeyboardButton(text='В МЕНЮ', callback_data='quit_game')])
+
+    try:
+        bot.editMessageText((game_id, player_id),
+                            text,
+                            reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    except:
+        print("UPDATE FAILED")
+
 
 # =====================================================
 #                 ИНИЦИАЛИЗАЦИЯ БОТА
