@@ -95,7 +95,6 @@ class game(object):
             final_window(self.__players__[player][1], self.__players__[player][2], text)
         self.end_game()
 
-
     def end_game(self):
         # перекидываем людей из игры в лобби
         for player in self.__players__:
@@ -106,8 +105,6 @@ class game(object):
         #for player in in_lobby:
         #    if player not in hosts:
         #        first_menu(player)
-
-
 
     def process(self):
         if self.__started__ == 1:
