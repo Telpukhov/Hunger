@@ -9,8 +9,9 @@ from pprint import pprint
 # =====================================================
 #                      Константы
 
-global round_time
+global round_time, ppz_players_number
 round_time = 50
+ppz_players_number = 2  # количество игроков ppz
 
 # =====================================================
 #                      КЛАСС ИГРЫ
@@ -135,10 +136,7 @@ class game(object):
                     self.__evil_win__ = 1
         # чек на окончание игры (ДОБРОМ)
             if len(self.__players__) > len(self.__ppz__):
-                good_votes = []
-                for player in self.__players__:
-                    if player not in self.__ppz__:
-                        good_votes.append(self.__votes__[player])
+                good_votes = [self.__votes__[player] for player in self.__players__ if player not in self.__ppz__]
                 ppc1 = 0
                 ppc2 = 0
                 for vote in good_votes:
@@ -261,7 +259,7 @@ def keyboard_handler(query_id, adr, name, msg, chat_id, message_id):
         # начинаем игру
         games[name].__started__ = 1
         # выбираем ppz
-        games[name].__ppz__ = random.sample(sorted(games[name].__players__),2)
+        games[name].__ppz__ = random.sample(sorted(games[name].__players__), ppz_players_number)
         # первый раунд
         games[name].__raund__ = 1
         for player in games[name].__players__:
@@ -385,7 +383,7 @@ token = '371150676:AAFNeZ7lPfeuftBxUaXuc_Drrj6jgzvW4rA'
 bot = telepot.Bot(token)
 # Очистка кэша
 onstart_update = bot.getUpdates()
-if (onstart_update != []):
+if onstart_update:  # any value is true. [] is false.
     update_id = int(onstart_update[-1].get('update_id')) + 1
     bot.getUpdates(offset=update_id)
 
@@ -401,7 +399,7 @@ while 1:
         games.pop(g)
     finished_games = []
     pkgs = bot.getUpdates(offset = offset)
-    if pkgs != []: # сообщение/я пришло... обрабатываем
+    if pkgs: # сообщение/я пришло... обрабатываем
         for pkg in pkgs:    # обрабатываем последовательно
             pprint(pkg)
             if 'message' in pkg: # пришло текстовое сообщение
