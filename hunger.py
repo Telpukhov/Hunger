@@ -10,7 +10,10 @@ from pprint import pprint
 #                      Константы
 
 global round_time
-round_time = 50
+round_time = 10
+global adequacy
+adequacy = 1
+
 
 # =====================================================
 #                      КЛАСС ИГРЫ
@@ -31,12 +34,15 @@ class game(object):
         self.__ppz_cur_text__ = ""
         self.__citizen_cur_text__ = ""
         self.__evil_win__ = 0
-        self.__words__ = ['Подъезд', 'Прекрасных', 'Целеуказаний']
+        self.__words__ = self.create_words()
         mins = int(round_time/60)
         sec = round_time - mins*60
         sec_d = int(sec/10)
         sec_e = sec - sec_d*10
         self.__show_time__ = str(mins) + ":" + str(sec_d) + str(sec_e)
+
+    def create_words(self):
+        return [random.choice(first_word), random.choice(second_word), random.choice(third_word)]
 
     def add_player(self, adr, name, chat_id, message_id):
         self.__players__[adr] = (name, chat_id, message_id)
@@ -375,6 +381,34 @@ global hosts
 global in_lobby
 global in_game
 global finished_games
+global first_word
+global second_word
+global third_word
+
+
+if adequacy == 1:
+    f = open('adequate_1.txt')
+else:
+    f = open('non_adequate_1.txt')
+text = f.read()
+first_word = text.split('\n')
+f.close()
+if adequacy == 1:
+    f = open('adequate_2.txt')
+else:
+    f = open('non_adequate_2.txt')
+text = f.read()
+second_word = text.split('\n')
+f.close()
+if adequacy == 1:
+    f = open('adequate_3.txt')
+else:
+    f = open('non_adequate_3.txt')
+text = f.read()
+third_word = text.split('\n')
+f.close()
+
+
 games = {}
 finished_games = []
 in_lobby = {}
