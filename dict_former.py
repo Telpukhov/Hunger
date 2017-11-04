@@ -55,4 +55,5 @@ def process_text(filename):
                     print(res)
 
 
-process_text('morph.txt')
+if __name__ == '__main__':
+    process_text('morph.txt')
